@@ -1,5 +1,26 @@
 import { useMemo, useState } from "react";
 
+const groupIcons = ["👥", "🧩", "🏴", "🎮", "🎤", "⚙️", "📣", "🛡️"];
+
+export function GroupsPage({ data, addGroup, deleteGroup, setGroupMembers }: any) {
+  const [form, setForm] = useState({ name: "", description: "", icon: "👥", color: "#0ea5e9" });
+
+  const membersByGroup = useMemo(() => {
+    const map = new Map<string, Set<string>>();
+    for (const membership of data.memberships) {
+      if (!map.has(membership.groupId)) map.set(membership.groupId, new Set());
+      map.get(membership.groupId)?.add(membership.userId);
+    }
+    return map;
+  }, [data.memberships]);
+
+  const toggleMembership = (groupId: string, userId: string, checked: boolean) => {
+    const currentMembers = [...(membersByGroup.get(groupId) ?? new Set<string>())];
+    const nextMembers = checked
+      ? Array.from(new Set([...currentMembers, userId]))
+      : currentMembers.filter((id) => id !== userId);
+    setGroupMembers(groupId, nextMembers);
+  };
 export function GroupsPage({ data, addGroup, deleteGroup, setGroupMembers }: any) {
   const [form, setForm] = useState({ name: "", description: "", icon: "", color: "#0ea5e9" });
   const [selectedGroupId, setSelectedGroupId] = useState("");
