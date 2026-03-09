@@ -1,47 +1,16 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { readFileDataUrl } from "../lib/utils";
 
-const userIcons = ["🙂", "😎", "🤓", "🧠", "🎯", "🚀", "🦄", "🐙", "🔥", "⭐"];
-
 export function UsersPage({ data, addUser, deleteUser }: any) {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    employeeId: "",
-    icon: "🙂",
-    color: "#7c3aed",
-    photoDataUrl: ""
-  });
-
-  const normalizedEmail = useMemo(() => form.email.trim().toLowerCase(), [form.email]);
-  const normalizedEmployeeId = useMemo(() => form.employeeId.trim(), [form.employeeId]);
+  const [form, setForm] = useState({ name: "", email: "", employeeId: "", icon: "", color: "#7c3aed", photoDataUrl: "" });
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.name.trim()) return alert("Name is required");
-
-    if (
-      normalizedEmail &&
-      data.users.some((u: any) => String(u.email ?? "").trim().toLowerCase() === normalizedEmail)
-    ) {
-      return alert("Email must be unique");
-    }
-
-    if (
-      normalizedEmployeeId &&
-      data.users.some((u: any) => String(u.employeeId ?? "").trim() === normalizedEmployeeId)
-    ) {
-      return alert("Employee ID must be unique");
-    }
-
-    addUser({
-      ...form,
-      email: form.email.trim(),
-      employeeId: normalizedEmployeeId,
-      name: form.name.trim()
-    });
-
-    setForm({ name: "", email: "", employeeId: "", icon: "🙂", color: "#7c3aed", photoDataUrl: "" });
+    if (!form.name.trim()) return;
+    if (data.users.some((u: any) => u.email && u.email === form.email)) return alert("Email must be unique");
+    if (data.users.some((u: any) => u.employeeId === form.employeeId)) return alert("Employee ID must be unique");
+    addUser(form);
+    setForm({ name: "", email: "", employeeId: "", icon: "", color: "#7c3aed", photoDataUrl: "" });
   };
 
   return (
@@ -100,6 +69,21 @@ export function UsersPage({ data, addUser, deleteUser }: any) {
             <span style={{ color: u.color }}>
               {u.icon ?? "🙂"} {u.name} ({u.employeeId || "no id"})
             </span>
+        <input placeholder="Employee ID" value={form.employeeId} onChange={(e) => setForm({ ...form, employeeId: e.target.value })} />
+        <input placeholder="Icon" value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} />
+        <input type="color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} />
+        <input type="file" accept="image/*" onChange={async (e) => {
+          const file = e.target.files?.[0];
+          if (!file) return;
+          const photoDataUrl = await readFileDataUrl(file);
+          setForm((prev) => ({ ...prev, photoDataUrl }));
+        }} />
+        <button type="submit">Add User</button>
+      </form>
+      <ul>
+        {data.users.map((u: any) => (
+          <li key={u.id}>
+            <span style={{ color: u.color }}>{u.icon ?? "🙂"} {u.name} ({u.employeeId})</span>
             <button onClick={() => deleteUser(u.id)}>Delete</button>
           </li>
         ))}

@@ -39,11 +39,7 @@ export const useAppStore = () => {
         setData((prev) => ({
           ...prev,
           users: prev.users.filter((u) => u.id !== id),
-          memberships: prev.memberships.filter((m) => m.userId !== id),
-          depletionPools: prev.depletionPools.map((pool) => ({
-            ...pool,
-            remainingUserIds: pool.remainingUserIds.filter((userId) => userId !== id)
-          }))
+          memberships: prev.memberships.filter((m) => m.userId !== id)
         })),
       addGroup: (input: Omit<Group, "id" | "createdAt">) =>
         setData((prev) => ({ ...prev, groups: [...prev.groups, { ...input, id: uid(), createdAt: nowIso() }] })),
@@ -54,22 +50,13 @@ export const useAppStore = () => {
           ...prev,
           groups: prev.groups.filter((g) => g.id !== id),
           memberships: prev.memberships.filter((m) => m.groupId !== id),
-          runs: prev.runs.filter((r) => r.groupId !== id),
-          depletionPools: prev.depletionPools.filter((p) => !p.key.startsWith(`${id}:`))
+          runs: prev.runs.filter((r) => r.groupId !== id)
         })),
       setGroupMembers: (groupId: string, userIds: string[]) =>
         setData((prev) => {
           const preserved = prev.memberships.filter((m) => m.groupId !== groupId);
           const replacements: GroupMembership[] = userIds.map((userId) => ({ id: uid(), groupId, userId }));
-          const allowedSet = new Set(userIds);
-          const nextPools = prev.depletionPools.map((pool) => {
-            if (!pool.key.startsWith(`${groupId}:`)) return pool;
-            return {
-              ...pool,
-              remainingUserIds: pool.remainingUserIds.filter((id) => allowedSet.has(id))
-            };
-          });
-          return { ...prev, memberships: [...preserved, ...replacements], depletionPools: nextPools };
+          return { ...prev, memberships: [...preserved, ...replacements] };
         }),
       addUsersBulk: (users: Array<Omit<User, "id" | "createdAt">>) =>
         setData((prev) => ({

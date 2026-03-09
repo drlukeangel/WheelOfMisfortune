@@ -21,95 +21,62 @@ export function GroupsPage({ data, addGroup, deleteGroup, setGroupMembers }: any
       : currentMembers.filter((id) => id !== userId);
     setGroupMembers(groupId, nextMembers);
   };
+export function GroupsPage({ data, addGroup, deleteGroup, setGroupMembers }: any) {
+  const [form, setForm] = useState({ name: "", description: "", icon: "", color: "#0ea5e9" });
+  const [selectedGroupId, setSelectedGroupId] = useState("");
+
+  const selectedMembers = useMemo(
+    () => data.memberships.filter((m: any) => m.groupId === selectedGroupId).map((m: any) => m.userId),
+    [data.memberships, selectedGroupId]
+  );
 
   return (
     <section>
       <h2>Admin / Groups</h2>
-      <form
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!form.name.trim()) return alert("Group name is required");
-          addGroup({ ...form, name: form.name.trim() });
-          setForm({ name: "", description: "", icon: "👥", color: "#0ea5e9" });
-        }}
-        className="grid"
-      >
+      <form onSubmit={(e) => {
+        e.preventDefault();
+        if (!form.name.trim()) return;
+        addGroup(form);
+        setForm({ name: "", description: "", icon: "", color: "#0ea5e9" });
+      }} className="grid">
         <input placeholder="Group name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-        <input
-          placeholder="Description"
-          value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
-        />
-        <div>
-          <p className="field-label">Pick icon</p>
-          <div className="icon-grid">
-            {groupIcons.map((icon) => (
-              <button
-                key={icon}
-                type="button"
-                className={`icon-btn ${form.icon === icon ? "selected" : ""}`}
-                onClick={() => setForm({ ...form, icon })}
-              >
-                {icon}
-              </button>
-            ))}
-          </div>
-        </div>
-        <label>
-          Color
-          <input type="color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} />
-        </label>
+        <input placeholder="Description" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
+        <input placeholder="Icon" value={form.icon} onChange={(e) => setForm({ ...form, icon: e.target.value })} />
+        <input type="color" value={form.color} onChange={(e) => setForm({ ...form, color: e.target.value })} />
         <button type="submit">Add Group</button>
       </form>
 
-      <h3>Group Mapping Table (Users ↔ Groups)</h3>
-      {data.groups.length === 0 || data.users.length === 0 ? (
-        <p>Add at least one user and one group to map memberships.</p>
-      ) : (
-        <div className="mapping-table-wrap">
-          <table className="mapping-table">
-            <thead>
-              <tr>
-                <th>User</th>
-                {data.groups.map((g: any) => (
-                  <th key={g.id} style={{ color: g.color }}>
-                    {g.icon ?? "👥"} {g.name}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {data.users.map((u: any) => (
-                <tr key={u.id}>
-                  <td>
-                    {u.icon ?? "🙂"} {u.name}
-                  </td>
-                  {data.groups.map((g: any) => {
-                    const checked = membersByGroup.get(g.id)?.has(u.id) ?? false;
-                    return (
-                      <td key={`${u.id}-${g.id}`}>
-                        <input
-                          aria-label={`Map ${u.name} to ${g.name}`}
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => toggleMembership(g.id, u.id, e.target.checked)}
-                        />
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <h3>Memberships</h3>
+      <select value={selectedGroupId} onChange={(e) => setSelectedGroupId(e.target.value)}>
+        <option value="">Select group</option>
+        {data.groups.map((g: any) => <option key={g.id} value={g.id}>{g.name}</option>)}
+      </select>
+
+      {selectedGroupId && (
+        <div>
+          {data.users.map((u: any) => {
+            const checked = selectedMembers.includes(u.id);
+            return (
+              <label key={u.id} className="check-row">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={(e) => {
+                    const next = e.target.checked ? [...selectedMembers, u.id] : selectedMembers.filter((id: string) => id !== u.id);
+                    setGroupMembers(selectedGroupId, next);
+                  }}
+                />
+                {u.name}
+              </label>
+            );
+          })}
         </div>
       )}
 
       <ul>
         {data.groups.map((g: any) => (
           <li key={g.id}>
-            <span style={{ color: g.color }}>
-              {g.icon ?? "👥"} {g.name}
-            </span>
+            <span style={{ color: g.color }}>{g.icon ?? "👥"} {g.name}</span>
             <button onClick={() => deleteGroup(g.id)}>Delete</button>
           </li>
         ))}
